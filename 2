@@ -1,0 +1,40 @@
+def inverse_matrix(matrix):
+    n = len(matrix)
+    # 建立增廣矩陣 [A | I]
+    aug = [row + [float(i == j) for j in range(n)] for i, row in enumerate(matrix)]
+
+    # 高斯-喬丹消去法
+    for i in range(n):
+        # 尋找最大主元
+        max_row = max(range(i, n), key=lambda r: abs(aug[r][i]))
+        aug[i], aug[max_row] = aug[max_row], aug[i]
+
+        # 將主對角元素變為 1
+        pivot = aug[i][i]
+        for j in range(2 * n):
+            aug[i][j] /= pivot
+
+        # 將其他列的該行清為 0
+        for r in range(n):
+            if r != i:
+                factor = aug[r][i]
+                for j in range(2 * n):
+                    aug[r][j] -= factor * aug[i][j]
+
+    # 取右邊為反矩陣部分
+    inverse = [row[n:] for row in aug]
+    return inverse
+
+# 原矩陣 A
+A = [
+    [4, 1, -1, 0],
+    [1, 3, -1, 0],
+    [-1, -1, 6, 2],
+    [0, 0, 2, 5]
+]
+
+invA = inverse_matrix(A)
+
+# 格式化輸出
+for row in invA:
+    print(["{:.3f}".format(num) for num in row])
