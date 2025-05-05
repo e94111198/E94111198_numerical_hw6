@@ -1,40 +1,63 @@
-def inverse_matrix(matrix):
-    n = len(matrix)
-    # 建立增廣矩陣 [A | I]
-    aug = [row + [float(i == j) for j in range(n)] for i, row in enumerate(matrix)]
+import numpy as np
 
-    # 高斯-喬丹消去法
+def find_inverse_detailed_no_print(matrix):
+    """
+    使用高斯-約旦消去法詳細計算矩陣的反矩陣，但不即時印出中間步驟。
+
+    Args:
+        matrix (numpy.ndarray): 要計算反矩陣的方陣。
+
+    Returns:
+        tuple: 包含所有步驟的增廣矩陣列表和最終的反矩陣 (numpy.ndarray 或 None)。
+    """
+    n = matrix.shape[0]
+    if matrix.shape[0] != matrix.shape[1]:
+        return [], None
+
+    augmented_matrix = np.hstack((matrix, np.identity(n)))
+    steps = [np.copy(augmented_matrix)]  # 儲存初始增廣矩陣
+
     for i in range(n):
-        # 尋找最大主元
-        max_row = max(range(i, n), key=lambda r: abs(aug[r][i]))
-        aug[i], aug[max_row] = aug[max_row], aug[i]
+        pivot = augmented_matrix[i, i]
+        if np.isclose(pivot, 0):
+            found_nonzero_row = False
+            for j in range(i + 1, n):
+                if not np.isclose(augmented_matrix[j, i], 0):
+                    augmented_matrix[[i, j]] = augmented_matrix[[j, i]]
+                    pivot = augmented_matrix[i, i]
+                    steps.append(np.copy(augmented_matrix))
+                    found_nonzero_row = True
+                    break
+            if not found_nonzero_row:
+                return steps, None
 
-        # 將主對角元素變為 1
-        pivot = aug[i][i]
-        for j in range(2 * n):
-            aug[i][j] /= pivot
+        augmented_matrix[i] = augmented_matrix[i] / pivot
+        steps.append(np.copy(augmented_matrix))
 
-        # 將其他列的該行清為 0
-        for r in range(n):
-            if r != i:
-                factor = aug[r][i]
-                for j in range(2 * n):
-                    aug[r][j] -= factor * aug[i][j]
+        for j in range(n):
+            if i != j:
+                factor = augmented_matrix[j, i]
+                augmented_matrix[j] = augmented_matrix[j] - factor * augmented_matrix[i]
+                steps.append(np.copy(augmented_matrix))
 
-    # 取右邊為反矩陣部分
-    inverse = [row[n:] for row in aug]
-    return inverse
+    inverse_matrix = augmented_matrix[:, n:]
+    return steps, inverse_matrix
 
-# 原矩陣 A
-A = [
-    [4, 1, -1, 0],
-    [1, 3, -1, 0],
-    [-1, -1, 6, 2],
-    [0, 0, 2, 5]
-]
+# 定義矩陣 A
+A = np.array([[4, 1, -1, 0],
+              [1, 3, -1, 0],
+              [-1, -1, 6, 2],
+              [0, 0, 2, 5]], dtype=float)
 
-invA = inverse_matrix(A)
+all_steps, inverse_A = find_inverse_detailed_no_print(A)
 
-# 格式化輸出
-for row in invA:
-    print(["{:.3f}".format(num) for num in row])
+if inverse_A is not None:
+    print("計算過程：")
+    for i, step in enumerate(all_steps):
+        print(f"步驟 {i}:")
+        print(step)
+        print("-" * 40)
+    print("\n最終反矩陣：")
+    print(inverse_A)
+else:
+    print("矩陣 A 不可逆，沒有反矩陣。")
